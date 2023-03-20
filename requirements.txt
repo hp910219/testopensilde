@@ -1,0 +1,17 @@
+
+Flask
+gunicorn
+oss2
+Pillow
+pip
+qrcode
+requests
+SQLAlchemy
+WTForms
+xlrd
+pdfconv
+comtypes
+jy-word
+matplotlib==1.5.0
+pymysql
+pyvips
