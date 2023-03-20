@@ -17,39 +17,213 @@
             height: 100%;
         }
     </style>
+    <style>
+        #overlays-div{
+            border: 1px solid red;
+        }
+        #overlays-divsd{
+            border: 1px solid red;
+        }
+    </style>
 </head>
-<body style="position: absolute; width: 100%;height: 100%;">
+<body style="position: absolute; width: 100%;height: 100%; padding: 2% 5%">
+<div style="margin-top: 20px; margin-bottom: 20px">
+    <input type="file" onchange="changeFile()" id="fileDom">
+    <button onclick="saveFile()">渲染</button>
+</div>
+<p id="msg"></p>
+<p><span class="text-red">*</span>上传成功后，请点击"渲染"按钮转换成切片后渲染</p>
+
+<br>
 <div id="openseadragon-viewer" style="width: 800px; height: 600px;border: 1px solid red"></div>
 <div id="element-overlay" style="width: 300px; height: 200px;border: 1px solid blue"></div>
 <script type="text/javascript">
-    OpenSeadragon({
-        id: "openseadragon-viewer",
-        prefixUrl: "./static/images/",
-        tileSources:   {
-            Image: {
-                xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
-                Url:      "./static/test_files/",
-                Format:   "jpeg",
-                Overlap:  "1",
-                TileSize: "256",
-                Size: {
-                    Height: '124576',
-                    Width:  '178560'
+    const $msg = document.getElementById('msg');
+    let viewer = renderView('static/test_files');
+    function renderView(file_dir) {
+        return OpenSeadragon({
+            id: "openseadragon-viewer",
+            prefixUrl: "./static/images/",
+            tileSources:   {
+                Image: {
+                    xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
+                    Url:      "./" +file_dir+ "/",
+                    Format:   "jpeg",
+                    Overlap:  "1",
+                    TileSize: "256",
+                    Size: {
+                        Height: '124576',
+                        Width:  '178560'
+                    },
+                    overlays: [{
+                        id : "overlays-div",    //设置overlay的id
+                        px:95000,                   //起始位置x
+                        py:52000,                    //起始位置y
+                        width:5000,              //设置宽度
+                        height:4500,            //设置高度
+                        {#<!--          className:"highlight",  //设置overlay的类名-->#}
+                    },
+                        {
+                            id : "overlays-divsd",    //设置overlay的id
+                            px:65000,                   //起始位置x
+                            py:32000,                    //起始位置y
+                            width:500,              //设置宽度
+                            height:400,            //设置高度
+                            {#<!--          className:"highlight",  //设置overlay的类名-->#}
+                        }]
                 }
+            },
+            overlays: [{
+                id : "overlays-div",    //设置overlay的id
+                px:95000,                   //起始位置x
+                py:52000,                    //起始位置y
+                width:5000,              //设置宽度
+                height:4500,            //设置高度
+                {#<!--          className:"highlight",  //设置overlay的类名-->#}
+            },
+                {
+                    id : "overlays-divsd",    //设置overlay的id
+                    px:65000,                   //起始位置x
+                    py:32000,                    //起始位置y
+                    width:5000,              //设置宽度
+                    height:4500,            //设置高度
+                    {#<!--          className:"highlight",  //设置overlay的类名-->#}
+                },
+                {
+                    id : "element-overlay",    //设置overlay的id
+                    px:95000,                   //起始位置x
+                    py:52000,                    //起始位置y
+                    width:5000,              //设置宽度
+                    height:4500,            //设置高度
+                    className:"highlight",  //设置overlay的类名
+                }],
+            // Initial rotation angle
+            degrees: 0,
+            // Show rotation buttons
+            showRotationControl: true,
+            // Enable touch rotation on tactile devices
+            gestureSettingsTouch: {
+                pinchRotate: true
             }
-        },
-        overlays: [
-            {
-                id: "element-overlay",
-                x: 0,
-                y: 0,
-                width: 0.2,
-                height: 0.2,
-                {#placement: 'BOTTOM_RIGHT'#}
+            {#tileSources: "./GeneratedImages/dzc_output.xml"#}
+        })
+    }
+    function changeFile(){
+        console.log("上传");
+
+    }
+    function saveFile() {
+        let fd = new FormData();
+        const fileInput = document.getElementById('fileDom');
+        fd.append('file', fileInput.files[0]);
+        var xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", function (ev) { $msg.innerHTML = ('上传中, 请稍候...') }, false);
+        xhr.addEventListener("load", (evt)=>{
+            let {status, response} = evt.target;
+            try {
+                response = (JSON.parse(response))
+            }catch (e) {
+                response = {};
             }
-        ]
-        {#tileSources: "./GeneratedImages/dzc_output.xml"#}
-    })
+            let {path} = response;
+            $msg.innerHTML = ('文件上传成功', console.log(evt));
+            if(status === 200 ){
+                $msg.innerHTML = ('文件转换中, 请稍候...');
+                fetch('/svs/2/img/', {
+                    method: 'post',
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                    body: JSON.stringify({file_path: path})})
+                    .then((promise) => {
+                        try {
+                            return promise.json();
+                        }
+                        catch (e) {
+                            return promise;
+                        }
+                    })
+                    .then((res) => {
+                        console.log(res);
+                        $msg.innerHTML = 'svs转换图片结束！' + res.message;
+                        viewer.destroy();
+                        viewer = renderView(res.file_dir);
+                    })
+                    .catch((err) => {
+                        if(rq.catch) rq.catch();
+                        else if(rq.redo)jy_request_common(rq, api_service);
+                        else jy_tip(`${rq.crud_name}失败, 请稍后重试或者联系管理员.${err}` , 'error');
+                    });
+            } else if(parseInt(status/100)===4) net_error('上传错误，请重新上传');
+            else if(parseInt(status/100)===3||parseInt(status/100)===5) net_error('上传错误，请联系管理员');
+            else net_error();//没有status情况下及，即readyState<3
+        }, false);
+        xhr.addEventListener("error", net_error, false);
+        xhr.addEventListener("abort", net_error, false);
+        xhr.open('post', '/upload/file/');
+        xhr.send(fd);
+    }
+    const service_info = {endpoint: sessionStorage.getItem('hostname') || `http://${window.location.hostname}`, 'port': 9003};
+    const tcm_api_prefix = sessionStorage.getItem('hostname') ? '' : `${service_info.endpoint }:${service_info.port || ''}`;
+    const jy_request_common =(rq, api_service=null) =>{
+        let token = sessionStorage.getItem('access-token');
+        let {url, api_info, headers
+        } = rq;
+        headers = headers || {};
+        headers = {...headers, 'Content-Type': 'application/json', 'Accept': 'application/json'};
+
+        let body;
+        api_info = api_info || {};
+        const {api_name, api_prefix} = api_info;
+        let method = rq.type.toLowerCase();
+        const action_name = method === 'get'? '获取': method === 'post'? '新建': method === 'put'? '更新': '删除';
+        if(api_prefix) url = api_prefix + url.substring(1);
+        if(!rq.crud_name) rq.crud_name = (action_name || '') + (api_name || url) + '信息';
+        if(rq.data){
+            if(method === 'get') url += '?' + dict2params(rq.data);
+            else body = JSON.stringify(rq.data);
+        }
+        if(url)headers['API-URL'] = url;
+        if(api_service) headers['API-SERVICE'] = api_service;
+        if(token) headers['Authorization'] = `Basic ` + token;
+        const tcm_api_prefix = sessionStorage.getItem('hostname')?'': `${service_info.endpoint }:${service_info.port || ''}`;
+        if(method === 'delete') {headers['API-METHOD'] = method.toUpperCase();method = 'put'; }
+        const fetch_url = `${tcm_api_prefix+rq.base_url}?${method === 'get' && rq.data? dict2params(rq.data): ''}`;
+        if(rq.down){
+            window.open(fetch_url);
+            return;
+        }
+        return fetch(fetch_url, {method, headers: headers, body})
+            .then((promise) => {
+                try {
+                    return promise.json();
+                }
+                catch (e) {
+                    return promise;
+                }
+            })
+            .then((res) => {
+                res = res || {status: -1};
+                if(typeof res === 'string') res.message = res;
+                else if(!res.message) res.message = '获取数据异常';
+                if(res && res.status === 1000101) {
+                    console.log(window.location.href);
+                    let {href} = window.location;
+                    if(href) sessionStorage.setItem('href', href);
+                    jy_tip(isEn? 'Login First': `请先登录`, 'error');
+
+                }
+                else if(rq.success) return rq.success(res);
+                else console.log(res);
+            })
+            .catch((err) => {
+                if(rq.catch) rq.catch();
+                else if(rq.redo)jy_request_common(rq, api_service);
+                else jy_tip(`${rq.crud_name}失败, 请稍后重试或者联系管理员.${err}` , 'error');
+            });
+    };
+    function net_error(msg) {
+        $msg.innerHTML = (msg? msg: '网络故障，请稍后刷新重试');
+    }
+
 </script>
 </body>
 </html>
