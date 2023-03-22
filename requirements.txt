@@ -2,6 +2,5 @@ Flask
 Pillow
 pip
 requests
-xlrd
 jy-word
 pyvips
