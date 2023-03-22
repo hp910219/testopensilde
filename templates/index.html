@@ -39,7 +39,8 @@
 <div id="element-overlay" style="width: 300px; height: 200px;border: 1px solid blue"></div>
 <script type="text/javascript">
     const $msg = document.getElementById('msg');
-    let viewer = renderView('static/test_files1');
+    let viewer;
+    {#let viewer = renderView('static/test_files1');#}
     function renderView(file_dir) {
         return OpenSeadragon({
             id: "openseadragon-viewer",
@@ -112,53 +113,54 @@
         console.log("上传");
     }
     function saveFile() {
+        let msgPrefix1 = '上传文件至服务器';
         let fd = new FormData();
         const fileInput = document.getElementById('fileDom');
         fd.append('file', fileInput.files[0]);
-        var xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", function (ev) { $msg.innerHTML = ('文件正上传至服务器, 请稍候...') }, false);
-        xhr.addEventListener("load", (evt)=>{
-            let {status, response} = evt.target;
-            try {
-                response = (JSON.parse(response))
-            }catch (e) {
-                response = {};
+        fetch('/upload/file/', {
+            method: 'POST',
+            body: fd
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                let {message, path} = data;
+                net_tip(msgPrefix1 + '结束，' + message);
+                if(path) svs2img(path);
+            })
+            .catch(error => {
+                net_tip(msgPrefix1 + JSON.stringify(error));
+                console.error(error)
+            });
+    }
+    function svs2img(path) {
+        let msgPrefix = '文件转换为切片';
+        net_tip(msgPrefix + '中, 请稍候...');
+        if(viewer) viewer.destroy();
+        fetch(
+            '/svs/2/img/',
+            {
+                method: 'post',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                body: JSON.stringify({file_path: path})
             }
-            let {path} = response;
-            $msg.innerHTML = ('文件已上传至服务器');
-            viewer.destroy();
-            if(status === 200 ){
-                $msg.innerHTML = ('文件转换中, 请稍候...');
-                fetch('/svs/2/img/', {
-                    method: 'post',
-                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-                    body: JSON.stringify({file_path: path})})
-                    .then((promise) => {
-                        try {
-                            return promise.json();
-                        }
-                        catch (e) {
-                            return promise;
-                        }
-                    })
-                    .then((res) => {
-                        console.log(res);
-                        $msg.innerHTML = 'svs转换图片结束，' + res.message;
-                        viewer = renderView(res.file_dir);
-                    })
-                    .catch((err) => {
-                        if(rq.catch) rq.catch();
-                        else if(rq.redo)jy_request_common(rq, api_service);
-                        else jy_tip(`${rq.crud_name}失败, 请稍后重试或者联系管理员.${err}` , 'error');
-                    });
-            } else if(parseInt(status/100)===4) net_error('上传错误，请重新上传');
-            else if(parseInt(status/100)===3||parseInt(status/100)===5) net_error('上传错误，请联系管理员');
-            else net_error();//没有status情况下及，即readyState<3
-        }, false);
-        xhr.addEventListener("error", net_error, false);
-        xhr.addEventListener("abort", net_error, false);
-        xhr.open('post', '/upload/file/');
-        xhr.send(fd);
+        ).then((promise) => {
+            try {
+                return promise.json();
+            }
+            catch (e) {
+                return promise;
+            }
+        })
+            .then((res) => {
+                console.log(res);
+                let {message, file_dir} = res;
+                net_tip(msgPrefix + '结束，' + message);
+                if(file_dir) viewer = renderView(file_dir);
+            })
+            .catch((err) => {
+                net_tip(msgPrefix + '失败，' + JSON.stringify(err));
+            });
     }
     const service_info = {endpoint: sessionStorage.getItem('hostname') || `http://${window.location.hostname}`, 'port': 9003};
     const tcm_api_prefix = sessionStorage.getItem('hostname') ? '' : `${service_info.endpoint }:${service_info.port || ''}`;
@@ -219,7 +221,11 @@
                 else jy_tip(`${rq.crud_name}失败, 请稍后重试或者联系管理员.${err}` , 'error');
             });
     };
-    function net_error(msg) {
+    function net_upload_error(msg) {
+        console.log(msg);
+        net_tip('上传文件失败'+  (msg? msg: '网络故障，请稍后刷新重试'));
+    }
+    function net_tip(msg) {
         $msg.innerHTML = (msg? msg: '网络故障，请稍后刷新重试');
     }
 
