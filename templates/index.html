@@ -114,6 +114,7 @@
     }
     function saveFile() {
         let msgPrefix1 = '上传文件至服务器';
+        net_tip(msgPrefix1 + '中, 请稍候...');
         let fd = new FormData();
         const fileInput = document.getElementById('fileDom');
         fd.append('file', fileInput.files[0]);
@@ -129,7 +130,7 @@
                 if(path) svs2img(path);
             })
             .catch(error => {
-                net_tip(msgPrefix1 + JSON.stringify(error));
+                net_tip(msgPrefix1  + '失败，' + JSON.stringify(error));
                 console.error(error)
             });
     }
