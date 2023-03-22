@@ -39,7 +39,7 @@
 <div id="element-overlay" style="width: 300px; height: 200px;border: 1px solid blue"></div>
 <script type="text/javascript">
     const $msg = document.getElementById('msg');
-    let viewer = renderView('static/test_files');
+    let viewer = renderView('static/test_files1');
     function renderView(file_dir) {
         return OpenSeadragon({
             id: "openseadragon-viewer",
@@ -110,14 +110,13 @@
     }
     function changeFile(){
         console.log("上传");
-
     }
     function saveFile() {
         let fd = new FormData();
         const fileInput = document.getElementById('fileDom');
         fd.append('file', fileInput.files[0]);
         var xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", function (ev) { $msg.innerHTML = ('上传中, 请稍候...') }, false);
+        xhr.upload.addEventListener("progress", function (ev) { $msg.innerHTML = ('文件正上传至服务器, 请稍候...') }, false);
         xhr.addEventListener("load", (evt)=>{
             let {status, response} = evt.target;
             try {
@@ -126,7 +125,8 @@
                 response = {};
             }
             let {path} = response;
-            $msg.innerHTML = ('文件上传成功', console.log(evt));
+            $msg.innerHTML = ('文件已上传至服务器');
+            viewer.destroy();
             if(status === 200 ){
                 $msg.innerHTML = ('文件转换中, 请稍候...');
                 fetch('/svs/2/img/', {
@@ -143,8 +143,7 @@
                     })
                     .then((res) => {
                         console.log(res);
-                        $msg.innerHTML = 'svs转换图片结束！' + res.message;
-                        viewer.destroy();
+                        $msg.innerHTML = 'svs转换图片结束，' + res.message;
                         viewer = renderView(res.file_dir);
                     })
                     .catch((err) => {

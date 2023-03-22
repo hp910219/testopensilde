@@ -1,4 +1,5 @@
 import os
+import shutil
 import traceback
 from flask import Flask, render_template, jsonify, request
 from config import read_conf, jyMoveDir
@@ -64,16 +65,17 @@ def svs2img():
         file_dir = '_'.join(file_names[:-1])
         source = file_dir + '_files'
         if os.path.exists(source):
-            os.removedirs(os.path.abspath(source))
+            shutil.rmtree(os.path.abspath(source))
         # if os.path.exists(source):
         #     source = file_dir + '1_files'
         target = 'static/' + source
         if os.path.exists(target):
-            os.removedirs(os.path.abspath(target))
+            shutil.rmtree(os.path.abspath(target))
         print source, target
         img.dzsave(file_dir)
-        import shutil
+        print 'pyvips over'
         shutil.move(source, target)
+        print 'over'
         return jsonify({'message': 'success', 'file_dir': target})
     except Exception, e:
         traceback.print_exc()
