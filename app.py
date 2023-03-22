@@ -66,8 +66,6 @@ def svs2img():
         source = file_dir + '_files'
         if os.path.exists(source):
             shutil.rmtree(os.path.abspath(source))
-        # if os.path.exists(source):
-        #     source = file_dir + '1_files'
         target = 'static/' + source
         if os.path.exists(target):
             shutil.rmtree(os.path.abspath(target))
@@ -75,7 +73,7 @@ def svs2img():
         img.dzsave(file_dir)
         print 'pyvips over'
         shutil.move(source, target)
-        print 'over'
+        print 'move dir over'
         return jsonify({'message': 'success', 'file_dir': target})
     except Exception, e:
         traceback.print_exc()
