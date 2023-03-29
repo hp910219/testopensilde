@@ -1,235 +1,60 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenSeadragon Demo</title>
-    <script type="text/javascript" src="./static/js/openseadragon.js"></script>
-    <style type="text/css">
-        body {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            margin: 0;
-        }
-        #openseadragon-viewer {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
-    <style>
-        #overlays-div{
-            border: 1px solid red;
-        }
-        #overlays-divsd{
-            border: 1px solid red;
-        }
-    </style>
+    {% set KOBAS_PREFIX = conf.static_prefix or '' %}
+    {% if conf.umi_name == 'umi_kobars' %}
+        {#        <link rel="stylesheet" href="./kobas3/static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">#}
+        <link rel="stylesheet" href="{{ KOBAS_PREFIX }}/static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">
+    {% elif conf.umi_name %}
+        <link rel="stylesheet" href="{{ conf.umi_prefix }}/static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">
+    {% else %}
+        <link rel="stylesheet" href="/static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">
+        <link rel="stylesheet" href="./static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">
+        <link rel="stylesheet" href="/en/static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">
+        <link rel="stylesheet" href="./en/static/{{ conf.umi_name or 'umi' }}.css?t={{ restart_time }}">
+    {% endif %}
+    <meta charset="utf-8">
+    <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+    <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
+    <meta HTTP-EQUIV="Expires" CONTENT="-1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no">
+    <title>{{ 'HerbNet' if '/en/' in request.path else conf.page_title}} </title>
+    <script>
+        sessionStorage.setItem('hostname', location.hostname +location.pathname);
+        var system_name = '{{ system_name }}';
+        var KOBAS_PREFIX = '{{ KOBAS_PREFIX }}';
+        var system_conf = {{ conf|tojson }};
+        var restart_time = '{{ restart_time }}';
+        var static_dir = '{{ static_dir }}';
+        console.log('system_conf', system_conf);
+
+    </script>
 </head>
-<body style="position: absolute; width: 100%;height: 100%; padding: 2% 5%">
-<div style="margin-top: 20px; margin-bottom: 20px">
-    <input type="file" onchange="changeFile()" id="fileDom">
-    <button onclick="saveFile()">渲染</button>
-</div>
-<p id="msg"></p>
-<p><span class="text-red">*</span>上传成功后，请点击"渲染"按钮转换成切片后渲染</p>
+<body>
+<div id="root"></div>
 
-<br>
-<div id="openseadragon-viewer" style="width: 800px; height: 600px;border: 1px solid red"></div>
-<div id="element-overlay" style="width: 300px; height: 200px;border: 1px solid blue"></div>
-<script type="text/javascript">
-    const $msg = document.getElementById('msg');
-    let viewer;
-    {#let viewer = renderView('static/test_files1');#}
-    function renderView(file_dir) {
-        return OpenSeadragon({
-            id: "openseadragon-viewer",
-            prefixUrl: "./static/images/",
-            tileSources:   {
-                Image: {
-                    xmlns:    "http://schemas.microsoft.com/deepzoom/2008",
-                    Url:      "./" +file_dir+ "/",
-                    Format:   "jpeg",
-                    Overlap:  "1",
-                    TileSize: "256",
-                    Size: {
-                        Height: '124576',
-                        Width:  '178560'
-                    },
-                    overlays: [{
-                        id : "overlays-div",    //设置overlay的id
-                        px:95000,                   //起始位置x
-                        py:52000,                    //起始位置y
-                        width:5000,              //设置宽度
-                        height:4500,            //设置高度
-                        {#<!--          className:"highlight",  //设置overlay的类名-->#}
-                    },
-                        {
-                            id : "overlays-divsd",    //设置overlay的id
-                            px:65000,                   //起始位置x
-                            py:32000,                    //起始位置y
-                            width:500,              //设置宽度
-                            height:400,            //设置高度
-                            {#<!--          className:"highlight",  //设置overlay的类名-->#}
-                        }]
-                }
-            },
-            overlays: [{
-                id : "overlays-div",    //设置overlay的id
-                px:95000,                   //起始位置x
-                py:52000,                    //起始位置y
-                width:5000,              //设置宽度
-                height:4500,            //设置高度
-                {#<!--          className:"highlight",  //设置overlay的类名-->#}
-            },
-                {
-                    id : "overlays-divsd",    //设置overlay的id
-                    px:65000,                   //起始位置x
-                    py:32000,                    //起始位置y
-                    width:5000,              //设置宽度
-                    height:4500,            //设置高度
-                    {#<!--          className:"highlight",  //设置overlay的类名-->#}
-                },
-                {
-                    id : "element-overlay",    //设置overlay的id
-                    px:95000,                   //起始位置x
-                    py:52000,                    //起始位置y
-                    width:5000,              //设置宽度
-                    height:4500,            //设置高度
-                    className:"highlight",  //设置overlay的类名
-                }],
-            // Initial rotation angle
-            degrees: 0,
-            // Show rotation buttons
-            showRotationControl: true,
-            // Enable touch rotation on tactile devices
-            gestureSettingsTouch: {
-                pinchRotate: true
-            }
-            {#tileSources: "./GeneratedImages/dzc_output.xml"#}
-        })
-    }
-    function changeFile(){
-        console.log("上传");
-    }
-    function saveFile() {
-        let msgPrefix1 = '上传文件至服务器';
-        net_tip(msgPrefix1 + '中, 请稍候...');
-        let fd = new FormData();
-        const fileInput = document.getElementById('fileDom');
-        fd.append('file', fileInput.files[0]);
-        fetch('/upload/file/', {
-            method: 'POST',
-            body: fd
-        })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                let {message, path} = data;
-                net_tip(msgPrefix1 + '结束，' + message);
-                if(path) svs2img(path);
-            })
-            .catch(error => {
-                net_tip(msgPrefix1  + '失败，' + JSON.stringify(error));
-                console.error(error)
-            });
-    }
-    function svs2img(path) {
-        let msgPrefix = '文件转换为切片';
-        net_tip(msgPrefix + '中, 请稍候...');
-        if(viewer) viewer.destroy();
-        fetch(
-            '/svs/2/img/',
-            {
-                method: 'post',
-                headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-                body: JSON.stringify({file_path: path})
-            }
-        ).then((promise) => {
-            try {
-                return promise.json();
-            }
-            catch (e) {
-                return promise;
-            }
-        })
-            .then((res) => {
-                console.log(res);
-                let {message, file_dir} = res;
-                net_tip(msgPrefix + '结束，' + message);
-                if(file_dir) viewer = renderView(file_dir);
-            })
-            .catch((err) => {
-                net_tip(msgPrefix + '失败，' + JSON.stringify(err));
-            });
-    }
-    const service_info = {endpoint: sessionStorage.getItem('hostname') || `http://${window.location.hostname}`, 'port': 9003};
-    const tcm_api_prefix = sessionStorage.getItem('hostname') ? '' : `${service_info.endpoint }:${service_info.port || ''}`;
-    const jy_request_common =(rq, api_service=null) =>{
-        let token = sessionStorage.getItem('access-token');
-        let {url, api_info, headers
-        } = rq;
-        headers = headers || {};
-        headers = {...headers, 'Content-Type': 'application/json', 'Accept': 'application/json'};
-
-        let body;
-        api_info = api_info || {};
-        const {api_name, api_prefix} = api_info;
-        let method = rq.type.toLowerCase();
-        const action_name = method === 'get'? '获取': method === 'post'? '新建': method === 'put'? '更新': '删除';
-        if(api_prefix) url = api_prefix + url.substring(1);
-        if(!rq.crud_name) rq.crud_name = (action_name || '') + (api_name || url) + '信息';
-        if(rq.data){
-            if(method === 'get') url += '?' + dict2params(rq.data);
-            else body = JSON.stringify(rq.data);
-        }
-        if(url)headers['API-URL'] = url;
-        if(api_service) headers['API-SERVICE'] = api_service;
-        if(token) headers['Authorization'] = `Basic ` + token;
-        const tcm_api_prefix = sessionStorage.getItem('hostname')?'': `${service_info.endpoint }:${service_info.port || ''}`;
-        if(method === 'delete') {headers['API-METHOD'] = method.toUpperCase();method = 'put'; }
-        const fetch_url = `${tcm_api_prefix+rq.base_url}?${method === 'get' && rq.data? dict2params(rq.data): ''}`;
-        if(rq.down){
-            window.open(fetch_url);
-            return;
-        }
-        return fetch(fetch_url, {method, headers: headers, body})
-            .then((promise) => {
-                try {
-                    return promise.json();
-                }
-                catch (e) {
-                    return promise;
-                }
-            })
-            .then((res) => {
-                res = res || {status: -1};
-                if(typeof res === 'string') res.message = res;
-                else if(!res.message) res.message = '获取数据异常';
-                if(res && res.status === 1000101) {
-                    console.log(window.location.href);
-                    let {href} = window.location;
-                    if(href) sessionStorage.setItem('href', href);
-                    jy_tip(isEn? 'Login First': `请先登录`, 'error');
-
-                }
-                else if(rq.success) return rq.success(res);
-                else console.log(res);
-            })
-            .catch((err) => {
-                if(rq.catch) rq.catch();
-                else if(rq.redo)jy_request_common(rq, api_service);
-                else jy_tip(`${rq.crud_name}失败, 请稍后重试或者联系管理员.${err}` , 'error');
-            });
-    };
-    function net_upload_error(msg) {
-        console.log(msg);
-        net_tip('上传文件失败'+  (msg? msg: '网络故障，请稍后刷新重试'));
-    }
-    function net_tip(msg) {
-        $msg.innerHTML = (msg? msg: '网络故障，请稍后刷新重试');
-    }
-
-</script>
+{% if conf.umi_name == 'umi_kobars' %}
+    {#    <script src="./kobas3/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>#}
+    <script src="{{ KOBAS_PREFIX }}/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>
+{% elif conf.umi_name %}
+    {#    <script src="./kobas3/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>#}
+    <script src="{{ conf.umi_prefix }}/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>
+{% else %}
+    <script src="/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>
+    <script src="./static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>
+    <script src="/en/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>
+    <script src="./en/static/{{ conf.umi_name or 'umi' }}.js?t={{ restart_time }}"></script>
+{% endif %}
+{% if conf.baidu_statistic %}
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?{{conf.baidu_statistic}}";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+{% endif %}
 </body>
 </html>
