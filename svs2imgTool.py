@@ -17,16 +17,14 @@ def svs2tif(src):
 
 
 def svs2imgFile(file_path, group=''):
+    if os.path.exists(file_path) is False:
+        return {'message': '%s not exists' % file_path}
     try:
         conf = read_conf()
         if isinstance(conf, str):
             return conf
-        file_dir = conf.get('file_dir')
-        env = conf.get('env')
-        if file_dir is None:
-            return 'file_dir not in config.conf'
         # print request.json.get('file')
-
+        env = conf.get('env')
         file_names = file_path.split(os.path.sep)[-1].split('.')
         file_dir = '_'.join(file_names[:-1])
         source = file_dir + '_files'
