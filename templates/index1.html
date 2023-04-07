@@ -55,14 +55,20 @@
     handleZoom(viewerA1, viewerA);
 
     function handleZoom(v1, v2) {
-        v1.addHandler('canvas-scroll', ()=>{
+        v1.addHandler('canvas-scroll', (target)=>{
             const homeZoom = v1.viewport.getZoom();
-            console.log(homeZoom);
-            {#viewer1#}
             document.getElementById('zoomV').innerHTML = 'Zoom: ' + homeZoom;
+            console.log('target', target);
             v2.viewport.zoomTo(homeZoom);
+            var viewportCenter1 = v1.viewport.getCenter();
+            v2.viewport.panTo(viewportCenter1);
+            var viewportCenter2 = v2.viewport.getCenter();
+            {#v2.viewport.set#}
+            console.log(viewportCenter1, viewportCenter2);
         });
+
     }
+
 
     // If you like my work, please consider supporting it at https://www.patreon.com/iangilman
 
