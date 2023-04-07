@@ -55,7 +55,7 @@
     handleZoom(viewerA1, viewerA);
 
     function handleZoom(v1, v2) {
-        v1.addHandler('canvas-scroll', (target)=>{
+        const tongbu = (target)=>{
             const homeZoom = v1.viewport.getZoom();
             document.getElementById('zoomV').innerHTML = 'Zoom: ' + homeZoom;
             console.log('target', target);
@@ -65,8 +65,9 @@
             var viewportCenter2 = v2.viewport.getCenter();
             {#v2.viewport.set#}
             console.log(viewportCenter1, viewportCenter2);
-        });
-
+        };
+        v1.addHandler('canvas-scroll', tongbu);
+        v1.addHandler('canvas-drag', tongbu);
     }
 
 
