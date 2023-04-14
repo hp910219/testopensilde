@@ -51,11 +51,9 @@
     let dzi2 = 'static/B3_0_5_roi_0_blur_1_rs_1_bc_0_a_0_4_l_-1_bi_0_-1_0.dzi';
     let viewerA = renderView('openseadragon-viewerA', '{{dzi1}}');
     let viewerA1 = renderView('openseadragon-viewerA1', '{{ dzi2 }}');
-
-
+    handleZoom(viewerA, viewerA1);
+    handleZoom(viewerA1, viewerA);
     window.onload=()=>{
-        handleZoom(viewerA, viewerA1);
-        handleZoom(viewerA1, viewerA);
         initView(viewerA);
         initView(viewerA1);
     };
@@ -70,7 +68,7 @@
         viewport.zoomTo(zoom);
         viewport.panTo(center);
         let {x, y} = center;
-        net_tip(('Zoom: ' + zoom + '<br/>Center: ' + x + ', ' + y));
+        net_tip(('Zoom: ' + zoom + ' Center: ' + x + ', ' + y));
     }
     function handleZoom(v1, v2) {
         const tongbu = (target)=>{
