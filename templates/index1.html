@@ -51,6 +51,10 @@
     let dzi2 = 'static/B3_0_5_roi_0_blur_1_rs_1_bc_0_a_0_4_l_-1_bi_0_-1_0.dzi';
     let viewerA = renderView('openseadragon-viewerA', '{{dzi1}}');
     let viewerA1 = renderView('openseadragon-viewerA1', '{{ dzi2 }}');
+    let buttonA = viewerA.Button;
+    console.log(buttonA);
+    let buttonA1 = viewerA1.Button;
+    console.log(buttonA1);
     handleZoom(viewerA, viewerA1);
     handleZoom(viewerA1, viewerA);
     window.onload=()=>{
@@ -81,6 +85,15 @@
         v1.addHandler('canvas-scroll', tongbu);
         v1.addHandler('canvas-drag', tongbu);
         v1.addHandler('navigator-click', tongbu);
+        v1.addHandler('rotate', (target)=>{
+            console.log('rotate', target);
+
+        });
+        v1.addHandler('zoom-in', (target)=>{
+            console.log('zoom-in', target);
+
+        });
+
         {#v1.addHandler('zoom', tongbu);#}
     }
 
@@ -90,25 +103,8 @@
     // Drag an image to move it around. Drag the background to pan.
 
 
-    var viewer2 = OpenSeadragon({
-        id: "openseadragon-viewer2",
-        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        tileSources: [
-            {
-                tileSource: '/' + dzi1,
-                x: 0,
-                showNavigator: true,
-            },
-            {
-                tileSource: '/' + dzi2,
-                x: 1.1,
-                showNavigator: true,
-            }
-        ],
-        showNavigator: true,
-    });
 
-    function areAllFullyLoaded() {
+    function areAllFullyLoaded(viewer) {
         var tiledImage;
         var count = viewer.world.getItemCount();
         for (var i = 0; i < count; i++) {
@@ -131,17 +127,6 @@
         }
     }
 
-    viewer.world.addHandler('add-item', function(event) {
-        var tiledImage = event.item;
-        tiledImage.addHandler('fully-loaded-change', function() {
-            var newFullyLoaded = areAllFullyLoaded();
-            if (newFullyLoaded !== isFullyLoaded) {
-                isFullyLoaded = newFullyLoaded;
-                updateLoadingIndicator();
-            }
-        });
-    });
-
     function renderView(ID, file_dzi) {
         return OpenSeadragon({
             id: ID,
@@ -157,8 +142,9 @@
             },
             showNavigator: true,
             minZoomLevel: 1.4,
+            sequenceMode: true,
             {#defaultZoomLevel: 5#}
-        }).clearControls();
+        });
     }
     function changeFile(){
         console.log("上传");
@@ -213,69 +199,6 @@
             .catch((err) => {
                 net_tip(msgPrefix + '失败，' + JSON.stringify(err));
             });
-    }
-    const service_info = {endpoint: sessionStorage.getItem('hostname') || `http://${window.location.hostname}`, 'port': 9003};
-    const tcm_api_prefix = sessionStorage.getItem('hostname') ? '' : `${service_info.endpoint }:${service_info.port || ''}`;
-    const jy_request_common =(rq, api_service=null) =>{
-        let token = sessionStorage.getItem('access-token');
-        let {url, api_info, headers
-        } = rq;
-        headers = headers || {};
-        headers = {...headers, 'Content-Type': 'application/json', 'Accept': 'application/json'};
-
-        let body;
-        api_info = api_info || {};
-        const {api_name, api_prefix} = api_info;
-        let method = rq.type.toLowerCase();
-        const action_name = method === 'get'? '获取': method === 'post'? '新建': method === 'put'? '更新': '删除';
-        if(api_prefix) url = api_prefix + url.substring(1);
-        if(!rq.crud_name) rq.crud_name = (action_name || '') + (api_name || url) + '信息';
-        if(rq.data){
-            if(method === 'get') url += '?' + dict2params(rq.data);
-            else body = JSON.stringify(rq.data);
-        }
-        if(url)headers['API-URL'] = url;
-        if(api_service) headers['API-SERVICE'] = api_service;
-        if(token) headers['Authorization'] = `Basic ` + token;
-        const tcm_api_prefix = sessionStorage.getItem('hostname')?'': `${service_info.endpoint }:${service_info.port || ''}`;
-        if(method === 'delete') {headers['API-METHOD'] = method.toUpperCase();method = 'put'; }
-        const fetch_url = `${tcm_api_prefix+rq.base_url}?${method === 'get' && rq.data? dict2params(rq.data): ''}`;
-        if(rq.down){
-            window.open(fetch_url);
-            return;
-        }
-        return fetch(fetch_url, {method, headers: headers, body})
-            .then((promise) => {
-                try {
-                    return promise.json();
-                }
-                catch (e) {
-                    return promise;
-                }
-            })
-            .then((res) => {
-                res = res || {status: -1};
-                if(typeof res === 'string') res.message = res;
-                else if(!res.message) res.message = '获取数据异常';
-                if(res && res.status === 1000101) {
-                    console.log(window.location.href);
-                    let {href} = window.location;
-                    if(href) sessionStorage.setItem('href', href);
-                    jy_tip(isEn? 'Login First': `请先登录`, 'msg');
-
-                }
-                else if(rq.success) return rq.success(res);
-                else console.log(res);
-            })
-            .catch((err) => {
-                if(rq.catch) rq.catch();
-                else if(rq.redo)jy_request_common(rq, api_service);
-                else jy_tip(`${rq.crud_name}失败, 请稍后重试或者联系管理员.${err}` , 'msg');
-            });
-    };
-    function net_upload_error(msg) {
-        console.log(msg);
-        net_tip('上传文件失败'+  (msg? msg: '网络故障，请稍后刷新重试'));
     }
     function net_tip(msg) {
         $msg.innerHTML = (msg? msg: '网络故障，请稍后刷新重试');
